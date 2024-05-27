@@ -1007,6 +1007,20 @@ func (c *Client) reattach() (net.Addr, error) {
 
 	if c.config.Reattach.Test {
 		c.negotiatedVersion = c.config.Reattach.ProtocolVersion
+		if c.config.Plugins == nil {
+			// Test the API version
+			version, pluginSet, err := c.checkProtoVersion(strconv.Itoa(c.negotiatedVersion))
+			if err != nil {
+				return c.address, err
+			}
+
+			// set the Plugins value to the compatible set, so the version
+			// doesn't need to be passed through to the ClientProtocol
+			// implementation.
+			c.config.Plugins = pluginSet
+			c.negotiatedVersion = version
+			c.logger.Debug("using plugin", "version", version)
+		}
 	} else {
 		// If we're in test mode, we do NOT set the runner. This avoids the
 		// runner being killed (the only purpose we have for setting c.runner
